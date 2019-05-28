@@ -16,9 +16,14 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="greenhouse_climate_monitor.ino" />
+    <None Include="web_server.ino" />
+    <None Include="memory_service.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.greenhouse_climate_monitor.vsarduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="__vm\.greenhouse-climate-monitor.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
