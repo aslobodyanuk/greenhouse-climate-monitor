@@ -2,9 +2,9 @@ void ConfigureWebServer()
 {
 	_webServer.on("/", HandleRootPage);
 	_webServer.on("/getChartData", HandleGetChartsData);
-	_webServer.on("/getLatestData", HandleGetLatestReadings);
-	_webServer.on("/configure", HandleConfigurePage);
+	_webServer.on("/getLatestData", HandleGetLatestReadings);	
 	_webServer.on("/getConfig", HandleGetConfig);
+	_webServer.on("/saveConfig", HandleSaveConfig);
 	_webServer.onNotFound([]() {
 		if (!HandleFileRead(_webServer.uri()))
 			_webServer.send(404, "text/plain", "404: Not Found");
@@ -50,11 +50,6 @@ void HandleRootPage()
 	HandleFileRead(ROOT_PAGE_HTML_FILE_NAME);
 }
 
-void HandleConfigurePage()
-{
-	HandleFileRead(CONFIGURE_PAGE_HTML_FILE_NAME);
-}
-
 void HandleGetConfig()
 {
 	String outputJson = GetJsonConfig();
@@ -71,7 +66,24 @@ void HandleGetChartsData()
 
 void HandleGetLatestReadings()
 {
-	String outputJson = "{ \"Temperature\": " + (String)_lastTemperatureValue + ", \"Humidity\": " + (String)_lastHumidityValue + ", \"Light\": " + (String)_lastLightValue + ", \"Time\": \"" + _timeClient.getFormattedTime() + "\" }";
+	String outputJson = "{ \"Temperature\": " + (String)_lastTemperatureValue + ", \"Humidity\": " + (String)_lastHumidityValue + ", \"Light\": " + (String)_lastLightValue + ", \"Time\": \"" + _timeClient.getFormattedTime() + "\", \"UptimeSeconds\": " + millis() / 1000 + " }";
 	Serial.println("Sending latest values json: " + outputJson);
 	_webServer.send(200, "application/json", outputJson);
+}
+
+void HandleSaveConfig()
+{
+	_configuration.Latitude = _webServer.arg("Latitude").toFloat();
+	_configuration.Longitude = _webServer.arg("Longitude").toFloat();
+	_configuration.DesiredTemperature = _webServer.arg("DesiredTemperature").toFloat();
+	_configuration.DesiredLightning = _webServer.arg("DesiredLightning").toFloat();
+	_configuration.CloudsSimulationPercent = _webServer.arg("CloudsSimulationPercent").toFloat();
+
+	Serial.print("Recieved new config: ");
+	Serial.println(GetJsonConfig());
+
+	WriteConfigToMemory();
+
+	Serial.println("Saved new config.");
+	_webServer.send(200, "text/plain", "OK");
 }

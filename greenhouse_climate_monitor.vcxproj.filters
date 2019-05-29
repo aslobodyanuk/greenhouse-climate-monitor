@@ -26,5 +26,8 @@
     <ClInclude Include="__vm\.greenhouse-climate-monitor.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Models.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -20,3 +20,14 @@
 @media (max-width: 1199.98px) {
   .sidebar-fixed {
     display: none; } }
+
+    .animatedVisible {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.4s linear;
+    }
+    .animatedHidden {
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s 0.4s, opacity 0.4s linear;
+    }

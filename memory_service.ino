@@ -6,16 +6,17 @@ void LoadConfigFromMemory()
 		WriteDefaultConfigToMemory();
 
 	EEPROM.begin(100);
-	_latitude = EEPROM.read(1);
-	_longitude = EEPROM.read(2);
-	_desiredTemperature = EEPROM.read(3);
-	_cloudsSimulationPercent = EEPROM.read(4);
+	_configuration.Latitude = EEPROM.read(1);
+	_configuration.Longitude = EEPROM.read(2);
+	_configuration.DesiredTemperature = EEPROM.read(3);
+	_configuration.DesiredLightning = EEPROM.read(4);
+	_configuration.CloudsSimulationPercent = EEPROM.read(5);
 	EEPROM.end();
 }
 
 String GetJsonConfig()
 {
-	return "{ \"Latitude\": " + (String)_latitude + ", \"Longitude\": " + (String)_longitude + ", \"DesiredTemperature\": " + (String)_desiredTemperature + +", \"CloudsSimulationPercent\": " + (String)_cloudsSimulationPercent + " }";
+	return "{ \"Latitude\": " + (String)_configuration.Latitude + ", \"Longitude\": " + (String)_configuration.Longitude + ", \"DesiredTemperature\": " + (String)_configuration.DesiredTemperature + ", \"CloudsSimulationPercent\": " + (String)_configuration.CloudsSimulationPercent + ", \"DesiredLightning\": " + (String)_configuration.DesiredLightning + " }";
 }
 
 void WriteConfigToMemory()
@@ -23,22 +24,25 @@ void WriteConfigToMemory()
 	Serial.println("Writing current config to memory.");
 	EEPROM.begin(100);
 	EEPROM.write(0, 228);
-	EEPROM.write(1, _latitude);
-	EEPROM.write(2, _longitude);
-	EEPROM.write(3, _desiredTemperature);
-	EEPROM.write(4, _cloudsSimulationPercent);
+	EEPROM.write(1, _configuration.Latitude);
+	EEPROM.write(2, _configuration.Longitude);
+	EEPROM.write(3, _configuration.DesiredLightning);
+	EEPROM.write(4, _configuration.DesiredTemperature);
+	EEPROM.write(5, _configuration.CloudsSimulationPercent);
 	EEPROM.end();
 }
 
 void WriteDefaultConfigToMemory()
 {
 	Serial.println("Writing default config to memory.");
+	Configuration defaultConfig = GetDefaultConfiguration();
 	EEPROM.begin(100);
 	EEPROM.write(0, 228);
-	EEPROM.write(1, 1);
-	EEPROM.write(2, 1);
-	EEPROM.write(3, 20);
-	EEPROM.write(4, 10);
+	EEPROM.write(1, defaultConfig.Latitude);
+	EEPROM.write(2, defaultConfig.Longitude);
+	EEPROM.write(3, defaultConfig.DesiredTemperature);
+	EEPROM.write(4, defaultConfig.DesiredLightning);
+	EEPROM.write(5, defaultConfig.CloudsSimulationPercent);
 	EEPROM.end();
 }
 
@@ -51,3 +55,34 @@ void DisplayEEPROM()
 	}
 	EEPROM.end();
 }
+
+Configuration GetDefaultConfiguration()
+{
+	Configuration output;
+	output.Latitude = 1;
+	output.Longitude = 1;
+	output.DesiredTemperature = 20.5;
+	output.DesiredLightning = 500;
+	output.CloudsSimulationPercent = 20;
+	return output;
+}
+
+//Configuration DeserializeConfig(String inputJson)
+//{
+//	Configuration output;	
+//	DeserializationError error = deserializeJson(_jsonMemory, inputJson);
+//
+//	if (error) {
+//		Serial.print("Deserialization of Configuration failed, returning default value. Error: ");
+//		Serial.println(error.c_str());
+//		return GetDefaultConfiguration();
+//	}
+//
+//	output.Latitude = _jsonMemory["Latitude"];
+//	output.Longitude = _jsonMemory["Longitude"];
+//	output.DesiredLightning = _jsonMemory["DesiredLightning"];
+//	output.DesiredTemperature = _jsonMemory["DesiredTemperature"];
+//	output.CloudsSimulationPercent = _jsonMemory["CloudsSimulationPercent"];
+//
+//	return output;
+//}

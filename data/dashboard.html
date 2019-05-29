@@ -38,7 +38,7 @@
   <header>
 
     <!-- Central Modal Large Info-->
-    <div class="modal fade" id="centralModalLGInfoDemo" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+    <div class="modal fade" id="configurationModalWindow" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
       aria-hidden="true">
       <div class="modal-dialog modal-lg modal-notify modal-info" role="document">
         <!--Content-->
@@ -54,28 +54,32 @@
 
           <!--Body-->
           <div class="modal-body">
-              <div class="px-lg-5 pt-0 md-form">
-                    <div class="md-form ml-0 mr-0">
-                      <input type="number" min="0" step="0.000001" id="lattitudeConfigValue" class="form-control ml-0">
-                      <label for="lattitudeConfigValue" class="ml-0">Latitude</label>
-                    </div>
-        
-                    <div class="md-form ml-0 mr-0">
-                      <input type="number" min="0" step="0.000001" id="longitudeConfigValue" class="form-control ml-0">
-                      <label for="longitudeConfigValue" class="ml-0">Longitude</label>
-                    </div>
+            <div class="px-lg-5 pt-0 md-form">
+              <div class="md-form ml-0 mr-0">
+                <input type="number" min="0" step="0.000001" id="lattitudeConfigValue" class="form-control ml-0 validate" required>
+                <label id="lattitudeConfigValueLabel" for="lattitudeConfigValue" class="ml-0">Latitude</label>
+              </div>
 
-                    <div class="md-form ml-0 mr-0">
-                      <input type="number" min="0" step="0.000001" id="desiredTemperatureConfigValue" class="form-control ml-0">
-                      <label for="desiredTemperatureConfigValue" class="ml-0">Desired Temperature</label>
-                    </div>
+              <div class="md-form ml-0 mr-0">
+                <input type="number" min="0" step="0.000001" id="longitudeConfigValue" class="form-control ml-0 validate" required>
+                <label id="longitudeConfigValueLabel" for="longitudeConfigValue" class="ml-0">Longitude</label>
+              </div>
 
-                    <div class="md-form ml-0 mr-0">
-                      <input type="number" min="0" step="1" max="100" id="cloudsPercentConfigValue" class="form-control ml-0">
-                      <label for="cloudsPercentConfigValue" class="ml-0">Clouds Simulation Percent</label>
-                    </div>
+              <div class="md-form ml-0 mr-0">
+                <input type="number" min="0" step="0.000001" id="desiredTemperatureConfigValue" class="form-control ml-0 validate" required>
+                <label id="desiredTemperatureConfigValueLabel" for="desiredTemperatureConfigValue" class="ml-0">Desired Temperature</label>
+              </div>
 
-                    <!-- <input type="email" id="materialContactFormEmail" class="form-control">
+              <div class="md-form ml-0 mr-0">
+                <input type="number" min="0" step="0.000001" id="desiredLightningConfigValue" class="form-control ml-0 validate" required>
+                <label id="desiredLightningConfigValueLabel" for="desiredLightningConfigValue" class="ml-0">Desired Lightning (lux)</label>
+              </div>
+
+              <div class="md-form ml-0 mr-0">
+                <input type="number" min="0" step="1" max="100" id="cloudsPercentConfigValue" class="form-control ml-0 validate" required>
+                <label id="cloudsPercentConfigValueLabel" for="cloudsPercentConfigValue" class="ml-0">Clouds Simulation Percent</label>
+              </div>
+              <!-- <input type="email" id="materialContactFormEmail" class="form-control">
                     <label for="materialContactFormEmail">E-mail</label>
         
                     <div>
@@ -98,13 +102,13 @@
         
         
                     <button class="btn btn-outline-info btn-rounded btn-block z-depth-0 my-4 waves-effect" type="submit">Send</button> -->
-      
+
             </div>
           </div>
 
           <!--Footer-->
           <div class="modal-footer">
-            <a role="button" class="btn btn-info">Save</a>
+            <a role="button" class="btn btn-info" id="saveConfiguration" onclick="saveConfiguration();">Save</a>
             <a role="button" class="btn btn-outline-info waves-effect" data-dismiss="modal">Cancel</a>
           </div>
         </div>
@@ -139,8 +143,21 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link waves-effect" data-toggle="modal" data-target="#centralModalLGInfoDemo">Configure</a>
+              <a class="nav-link waves-effect" onclick="showConfigurationWindow()">Configure</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link waves-effect" data-toggle="modal" data-target="#configurationModalWindow" >Show Configuration</a>
+            </li>
+          </ul>
+
+          <!-- Right -->
+          <ul class="navbar-nav nav-flex-icons">
+            <span id="configSavedAlert" class="navbar-text green-text animatedHidden">
+              Configuration Saved
+            </span>
+            <span id="configSavedError" class="navbar-text red-text animatedHidden">
+              Error Occured
+            </span>          
           </ul>
 
         </div>
@@ -250,6 +267,7 @@
                     <th>Temperature</th>
                     <th>Humidity</th>
                     <th>Lightness</th>
+                    <th>Uptime (sec)</th>
                   </tr>
                 </thead>
                 <!-- Table head -->
@@ -260,6 +278,7 @@
                     <td id="latestTempValueCell"></td>
                     <td id="latestHumidityValueCell"></td>
                     <td id="latestLightnessValueCell"></td>
+                    <td id="uptimeValueCell"></td>
                   </tr>
                 </tbody>
                 <!-- Table body -->

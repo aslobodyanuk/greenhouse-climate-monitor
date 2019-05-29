@@ -1,3 +1,5 @@
+#include <ArduinoJson.hpp>
+#include <ArduinoJson.h>
 #include <EEPROM.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -8,6 +10,8 @@
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include <SimpleKalmanFilter.h>
+
+#include "Models.h"
 
 #define DHT_PIN D4
 #define DHT_TYPE DHT21
@@ -23,7 +27,6 @@
 #define READ_PROXIMITY_EVERY 1000
 
 #define ROOT_PAGE_HTML_FILE_NAME "/dashboard.html"
-#define CONFIGURE_PAGE_HTML_FILE_NAME "/config.html"
 
 #define UTC_OFFSET_SECONDS 10800
 #define TIME_HOST_NAME "pool.ntp.org"
@@ -43,6 +46,7 @@ SimpleKalmanFilter _temperatureFilter(2, 2, 0.01);
 SimpleKalmanFilter _lightFilter(2, 2, 0.01);
 WiFiUDP _ntpUDP;
 NTPClient _timeClient(_ntpUDP, TIME_HOST_NAME, UTC_OFFSET_SECONDS);
+//StaticJsonDocument<200> _jsonMemory;
 
 unsigned long _lastReadDhtSensor;
 unsigned long _lastReadLightSensor;
@@ -59,10 +63,7 @@ float _temperatureDay[DAY_CHART_ARRAY_LENGTH];
 float _humidityDay[DAY_CHART_ARRAY_LENGTH];
 float _lightDay[DAY_CHART_ARRAY_LENGTH];
 
-float _latitude;
-float _longitude;
-float _desiredTemperature;
-int _cloudsSimulationPercent;
+Configuration _configuration;
 
 void setup()
 {	
