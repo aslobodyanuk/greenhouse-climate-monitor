@@ -4,4 +4,5 @@ struct Configuration {
 	float DesiredTemperature;
 	float DesiredLightning;
 	int CloudsSimulationPercent;
+	bool SimulateData;
 };

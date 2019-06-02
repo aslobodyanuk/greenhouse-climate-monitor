@@ -78,6 +78,7 @@ void HandleSaveConfig()
 	_configuration.DesiredTemperature = _webServer.arg("DesiredTemperature").toFloat();
 	_configuration.DesiredLightning = _webServer.arg("DesiredLightning").toFloat();
 	_configuration.CloudsSimulationPercent = _webServer.arg("CloudsSimulationPercent").toFloat();
+	_configuration.SimulateData = _webServer.arg("SimulateData") == "true";
 
 	Serial.print("Recieved new config: ");
 	Serial.println(GetJsonConfig());

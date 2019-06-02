@@ -31,3 +31,7 @@
       opacity: 0;
       transition: visibility 0s 0.4s, opacity 0.4s linear;
     }
+
+    .hoverPointer:hover {
+      cursor: pointer;
+    }

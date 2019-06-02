@@ -11,12 +11,13 @@ void LoadConfigFromMemory()
 	_configuration.DesiredTemperature = EEPROM.read(3);
 	_configuration.DesiredLightning = EEPROM.read(4);
 	_configuration.CloudsSimulationPercent = EEPROM.read(5);
+	_configuration.SimulateData = EEPROM.read(6);
 	EEPROM.end();
 }
 
 String GetJsonConfig()
 {
-	return "{ \"Latitude\": " + (String)_configuration.Latitude + ", \"Longitude\": " + (String)_configuration.Longitude + ", \"DesiredTemperature\": " + (String)_configuration.DesiredTemperature + ", \"CloudsSimulationPercent\": " + (String)_configuration.CloudsSimulationPercent + ", \"DesiredLightning\": " + (String)_configuration.DesiredLightning + " }";
+	return "{ \"Latitude\": " + (String)_configuration.Latitude + ", \"Longitude\": " + (String)_configuration.Longitude + ", \"DesiredTemperature\": " + (String)_configuration.DesiredTemperature + ", \"CloudsSimulationPercent\": " + (String)_configuration.CloudsSimulationPercent + ", \"DesiredLightning\": " + (String)_configuration.DesiredLightning + ", \"SimulateData\": " + (String)_configuration.SimulateData + " }";
 }
 
 void WriteConfigToMemory()
@@ -29,6 +30,7 @@ void WriteConfigToMemory()
 	EEPROM.write(3, _configuration.DesiredLightning);
 	EEPROM.write(4, _configuration.DesiredTemperature);
 	EEPROM.write(5, _configuration.CloudsSimulationPercent);
+	EEPROM.write(6, _configuration.SimulateData);
 	EEPROM.end();
 }
 
@@ -43,6 +45,7 @@ void WriteDefaultConfigToMemory()
 	EEPROM.write(3, defaultConfig.DesiredTemperature);
 	EEPROM.write(4, defaultConfig.DesiredLightning);
 	EEPROM.write(5, defaultConfig.CloudsSimulationPercent);
+	EEPROM.write(6, defaultConfig.SimulateData);
 	EEPROM.end();
 }
 
@@ -64,5 +67,6 @@ Configuration GetDefaultConfiguration()
 	output.DesiredTemperature = 20.5;
 	output.DesiredLightning = 500;
 	output.CloudsSimulationPercent = 20;
+	output.SimulateData = false;
 	return output;
 }

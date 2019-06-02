@@ -56,29 +56,43 @@
           <div class="modal-body">
             <div class="px-lg-5 pt-0 md-form">
               <div class="md-form ml-0 mr-0">
-                <input type="number" min="0" step="0.000001" id="lattitudeConfigValue" class="form-control ml-0 validate" required>
+                <input type="number" min="0" step="0.000001" id="lattitudeConfigValue"
+                  class="form-control ml-0 validate" required>
                 <label id="lattitudeConfigValueLabel" for="lattitudeConfigValue" class="ml-0">Latitude</label>
               </div>
 
               <div class="md-form ml-0 mr-0">
-                <input type="number" min="0" step="0.000001" id="longitudeConfigValue" class="form-control ml-0 validate" required>
+                <input type="number" min="0" step="0.000001" id="longitudeConfigValue"
+                  class="form-control ml-0 validate" required>
                 <label id="longitudeConfigValueLabel" for="longitudeConfigValue" class="ml-0">Longitude</label>
               </div>
 
               <div class="md-form ml-0 mr-0">
-                <input type="number" min="0" step="0.000001" id="desiredTemperatureConfigValue" class="form-control ml-0 validate" required>
-                <label id="desiredTemperatureConfigValueLabel" for="desiredTemperatureConfigValue" class="ml-0">Desired Temperature</label>
+                <input type="number" min="0" step="0.000001" id="desiredTemperatureConfigValue"
+                  class="form-control ml-0 validate" required>
+                <label id="desiredTemperatureConfigValueLabel" for="desiredTemperatureConfigValue" class="ml-0">Desired
+                  Temperature</label>
               </div>
 
               <div class="md-form ml-0 mr-0">
-                <input type="number" min="0" step="0.000001" id="desiredLightningConfigValue" class="form-control ml-0 validate" required>
-                <label id="desiredLightningConfigValueLabel" for="desiredLightningConfigValue" class="ml-0">Desired Lightning (lux)</label>
+                <input type="number" min="0" step="0.000001" id="desiredLightningConfigValue"
+                  class="form-control ml-0 validate" required>
+                <label id="desiredLightningConfigValueLabel" for="desiredLightningConfigValue" class="ml-0">Desired
+                  Lightning (lux)</label>
               </div>
 
               <div class="md-form ml-0 mr-0">
-                <input type="number" min="0" step="1" max="100" id="cloudsPercentConfigValue" class="form-control ml-0 validate" required>
-                <label id="cloudsPercentConfigValueLabel" for="cloudsPercentConfigValue" class="ml-0">Clouds Simulation Percent</label>
+                <input type="number" min="0" step="1" max="100" id="cloudsPercentConfigValue"
+                  class="form-control ml-0 validate" required>
+                <label id="cloudsPercentConfigValueLabel" for="cloudsPercentConfigValue" class="ml-0">Clouds Simulation
+                  Percent</label>
               </div>
+
+              <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input hoverPointer" id="simulateDataConfigValue">
+                <label class="custom-control-label hoverPointer" for="simulateDataConfigValue">Simulate Data</label>
+              </div>
+              
               <!-- <input type="email" id="materialContactFormEmail" class="form-control">
                     <label for="materialContactFormEmail">E-mail</label>
         
@@ -146,7 +160,8 @@
               <a class="nav-link waves-effect" onclick="showConfigurationWindow()">Configure</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link waves-effect" data-toggle="modal" data-target="#configurationModalWindow" >Show Configuration</a>
+              <a class="nav-link waves-effect" data-toggle="modal" data-target="#configurationModalWindow">Show
+                Configuration</a>
             </li>
           </ul>
 
@@ -157,7 +172,7 @@
             </span>
             <span id="configSavedError" class="navbar-text red-text animatedHidden">
               Error Occured
-            </span>          
+            </span>
           </ul>
 
         </div>

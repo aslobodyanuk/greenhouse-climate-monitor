@@ -39,6 +39,7 @@ function showConfigurationWindow() {
       $("#desiredTemperatureConfigValue").val(data.DesiredTemperature);
       $("#desiredLightningConfigValue").val(data.DesiredLightning);
       $("#cloudsPercentConfigValue").val(data.CloudsSimulationPercent);
+      $("#simulateDataConfigValue").prop("checked", data.SimulateData);
 
       $("#lattitudeConfigValueLabel").addClass("active");
       $("#longitudeConfigValueLabel").addClass("active");
@@ -86,7 +87,8 @@ function saveConfiguration() {
     Longitude: $("#longitudeConfigValue").val(),
     DesiredTemperature: $("#desiredTemperatureConfigValue").val(),
     DesiredLightning: $("#desiredLightningConfigValue").val(),
-    CloudsSimulationPercent: $("#cloudsPercentConfigValue").val()
+    CloudsSimulationPercent: $("#cloudsPercentConfigValue").val(),
+    SimulateData: $("#simulateDataConfigValue").is(":checked")
   };
 
   $("#configurationModalWindow").modal("hide");
