@@ -1,3 +1,4 @@
+#include <AutoPID.h>
 #include <EEPROM.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -17,7 +18,7 @@
 
 #define LIGHT_METER_SDA_PIN D3
 #define LIGHT_METER_SCL_PIN D5
-#define READ_LIGHT_METER_EVERY 1000
+#define READ_LIGHT_METER_EVERY 400
 #define LIGHT_METER_ADDRESS 0x23
 
 #define PROXIMITY_SENSOR_ECHO_PIN D7
@@ -26,6 +27,7 @@
 
 #define ROOT_PAGE_HTML_FILE_NAME "/dashboard.html"
 
+#define MILLIS_IN_ONE_DAY 86400000
 #define UTC_OFFSET_SECONDS 10800
 #define TIME_HOST_NAME "pool.ntp.org"
 #define UPDATE_TIME_EVERY 1000
@@ -42,6 +44,14 @@
 const char *WIFI_SSID = "DNIWE";
 const char *WIFI_PASSWORD = "9hAiW%oR08521";
 
+#define LIGHT_PID_OUTPUT_MIN 0
+#define LIGHT_PID_OUTPUT_MAX 255
+#define LIGHT_PID_KP 0.3
+#define LIGHT_PID_KI 0.1
+#define LIGHT_PID_KD 0.9
+
+#define LIGHT_OUTPUT_PIN D2
+
 ESP8266WebServer _webServer(80);
 DHT _dhtSensor(DHT_PIN, DHT_TYPE);
 BH1750 _lightMeter(LIGHT_METER_ADDRESS);
@@ -50,6 +60,9 @@ SimpleKalmanFilter _temperatureFilter(2, 2, 0.01);
 SimpleKalmanFilter _lightFilter(2, 2, 0.01);
 WiFiUDP _ntpUDP;
 NTPClient _timeClient(_ntpUDP, TIME_HOST_NAME, UTC_OFFSET_SECONDS);
+
+unsigned long _totalSunTime = 0;
+unsigned long _millisCurrentDayStart;
 
 unsigned long _lastReadDhtSensor;
 unsigned long _lastReadLightSensor;
@@ -71,11 +84,17 @@ float _lightDay[DAY_CHART_ARRAY_LENGTH];
 
 Configuration _configuration;
 
+double _lastLightValuePID;
+double _lightPIDOutput;
+AutoPID _lightPID(&_lastLightValuePID, &_configuration.DesiredLightning, &_lightPIDOutput, LIGHT_PID_OUTPUT_MIN, LIGHT_PID_OUTPUT_MAX, LIGHT_PID_KP, LIGHT_PID_KI, LIGHT_PID_KD);
+
 void setup()
-{	
+{		
 	Wire.begin(LIGHT_METER_SDA_PIN, LIGHT_METER_SCL_PIN);
 	pinMode(PROXIMITY_SENSOR_TRIG_PIN, OUTPUT);
 	pinMode(PROXIMITY_SENSOR_ECHO_PIN, INPUT);
+
+	pinMode(LIGHT_OUTPUT_PIN, OUTPUT);
 
 	Serial.begin(9600);
 
@@ -84,6 +103,7 @@ void setup()
 	_lastReadProximitySensor = millis();
 	_lastTimeUpdate = millis();
 	_dataSimulationLastWrite = millis();
+	_millisCurrentDayStart = millis();
 
 	_dhtSensor.begin();
 	SPIFFS.begin();
@@ -118,14 +138,18 @@ void setup()
 	ClearChartArrays();
 
 	//FillArraysWithRandomNumbers();	
+	_lightPID.setTimeStep(100);
 }
 
 void loop()
 {
+	_lightPID.run();
+	analogWrite(LIGHT_OUTPUT_PIN, _lightPIDOutput);
+
 	_webServer.handleClient();
 
 	if (millis() - _lastReadDhtSensor > READ_DHT_EVERY)
-	{
+	{		
 		float temperatureReading = _dhtSensor.readTemperature();
 		float humidityReading = _dhtSensor.readHumidity();
 
@@ -153,12 +177,26 @@ void loop()
 		float lux = _lightMeter.readLightLevel();
 
 		if (!isnan(lux))
+		{
 			_lastLightValue = _lightFilter.updateEstimate(lux);
+			_lastLightValuePID = lux;
+		}
 
-		/*Serial.print("Light: ");
-		Serial.print(lux);
-		Serial.print(" E: ");
-		Serial.println(_lastLightValue);*/
+		if (millis() - _millisCurrentDayStart > MILLIS_IN_ONE_DAY)
+		{
+			_totalSunTime = 0;
+			_millisCurrentDayStart = millis();
+		}
+
+		if (_lastLightValue >= _configuration.DesiredLightning * 0.9)
+			_totalSunTime += millis() - _lastReadLightSensor;
+
+		Serial.print("Light: ");
+		Serial.print(_lastLightValuePID);
+		Serial.print(" PID Output: ");
+		Serial.print(_lightPIDOutput);
+		Serial.print(" Est: ");
+		Serial.println(_lastLightValue);
 
 		_lastReadLightSensor = millis();
 	}
@@ -205,11 +243,11 @@ void loop()
 	{
 		_timeClient.update();
 
-		Serial.print("Time: ");
+		/*Serial.print("Time: ");
 		Serial.print(_timeClient.getFormattedTime());
 
 		Serial.print(" MilisTime: ");
-		Serial.println(_timeClient.getEpochTime());
+		Serial.println(_timeClient.getEpochTime());*/
 
 		/*Serial.print("LastHour: ");
 		Serial.println(_lastHourWrittenChart);*/
@@ -217,7 +255,7 @@ void loop()
 		//Update chart values every hour for a day
 		if (_timeClient.getHours() > _lastHourWrittenChart || (_timeClient.getHours() == 0 && _lastHourWrittenChart == 23))
 		{
-			_lastHourWrittenChart = _timeClient.getDay();
+			_lastHourWrittenChart = _timeClient.getHours();
 			UpdateChartData(_timeClient.getDay(), _timeClient.getHours());
 		}
 
@@ -278,7 +316,8 @@ void UpdateChartData(int currentDayReading, int currentHourReading)
 	//If last reading was faulty - reset state, to ensure that data will be written one more time
 	if (LastReadingAvaliable() == false)
 	{
-		_lastHourWrittenChart = currentDayReading - 1;
+		Serial.println("Some of chart values are not avaliable.");
+		_lastHourWrittenChart = currentHourReading - 1;
 		return;
 	}
 

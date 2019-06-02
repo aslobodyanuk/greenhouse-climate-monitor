@@ -2,16 +2,13 @@ void LoadConfigFromMemory()
 {
 	Serial.println("Loading config from memory.");
 	
+	int curAddress = 0;
 	EEPROM.begin(100);
-	if (EEPROM.read(0) != 228)
+	if (EEPROM.read(curAddress) != 228)
 		WriteDefaultConfigToMemory();
-
-	_configuration.Latitude = EEPROM.read(1);
-	_configuration.Longitude = EEPROM.read(2);
-	_configuration.DesiredTemperature = EEPROM.read(3);
-	_configuration.DesiredLightning = EEPROM.read(4);
-	_configuration.CloudsSimulationPercent = EEPROM.read(5);
-	_configuration.SimulateData = EEPROM.read(6);
+	
+	curAddress += sizeof(int);
+	_configuration = EEPROM.get(curAddress, _configuration);
 	EEPROM.end();
 }
 
@@ -23,14 +20,11 @@ String GetJsonConfig()
 void WriteConfigToMemory()
 {
 	Serial.println("Writing current config to memory.");
+	int curAddress = 0;
 	EEPROM.begin(100);
 	EEPROM.write(0, 228);
-	EEPROM.write(1, _configuration.Latitude);
-	EEPROM.write(2, _configuration.Longitude);
-	EEPROM.write(3, _configuration.DesiredLightning);
-	EEPROM.write(4, _configuration.DesiredTemperature);
-	EEPROM.write(5, _configuration.CloudsSimulationPercent);
-	EEPROM.write(6, _configuration.SimulateData);
+	curAddress += sizeof(int);
+	EEPROM.put(curAddress, _configuration);
 	EEPROM.end();
 }
 
@@ -38,14 +32,11 @@ void WriteDefaultConfigToMemory()
 {
 	Serial.println("Writing default config to memory.");
 	Configuration defaultConfig = GetDefaultConfiguration();
+	int curAddress = 0;
 	EEPROM.begin(100);
 	EEPROM.write(0, 228);
-	EEPROM.write(1, defaultConfig.Latitude);
-	EEPROM.write(2, defaultConfig.Longitude);
-	EEPROM.write(3, defaultConfig.DesiredTemperature);
-	EEPROM.write(4, defaultConfig.DesiredLightning);
-	EEPROM.write(5, defaultConfig.CloudsSimulationPercent);
-	EEPROM.write(6, defaultConfig.SimulateData);
+	curAddress += sizeof(int);
+	EEPROM.put(curAddress, defaultConfig);
 	EEPROM.end();
 }
 

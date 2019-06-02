@@ -2,7 +2,7 @@ struct Configuration {
 	float Latitude;
 	float Longitude;
 	float DesiredTemperature;
-	float DesiredLightning;
+	double DesiredLightning;
 	int CloudsSimulationPercent;
 	bool SimulateData;
 };

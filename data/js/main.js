@@ -7,7 +7,8 @@ function fillLatestData(latestData) {
   $("#latestHumidityValueCell").text(latestData.Humidity);
   $("#latestLightnessValueCell").text(latestData.Light);
   $("#currentTimeLatestReading").text(latestData.Time);
-  $("#uptimeValueCell").text(latestData.UptimeSeconds)
+  $("#uptimeValueCell").text(latestData.UptimeSeconds);
+  $("#totalSunTimeCell").text(latestData.TotalSunTime);
 }
 
 function getChartData() {
