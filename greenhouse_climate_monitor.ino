@@ -1,5 +1,3 @@
-#include <ArduinoJson.hpp>
-#include <ArduinoJson.h>
 #include <EEPROM.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -35,6 +33,10 @@
 #define WRITE_TO_CHART_EVERY 3600
 #define DAY_CHART_ARRAY_LENGTH 24
 
+#define WIFI_CONNECT_MAX_TRIES 2
+#define WIFI_AP_NAME "Climate Monitor"
+#define WIFI_AP_PASSWORD "12344321"
+
 const char *WIFI_SSID = "DNIWE";
 const char *WIFI_PASSWORD = "9hAiW%oR08521";
 
@@ -46,7 +48,6 @@ SimpleKalmanFilter _temperatureFilter(2, 2, 0.01);
 SimpleKalmanFilter _lightFilter(2, 2, 0.01);
 WiFiUDP _ntpUDP;
 NTPClient _timeClient(_ntpUDP, TIME_HOST_NAME, UTC_OFFSET_SECONDS);
-//StaticJsonDocument<200> _jsonMemory;
 
 unsigned long _lastReadDhtSensor;
 unsigned long _lastReadLightSensor;
@@ -81,22 +82,13 @@ void setup()
 	_dhtSensor.begin();
 	SPIFFS.begin();
 
-	DisplayEEPROM();
+	//DisplayEEPROM();
 	LoadConfigFromMemory();
 
-	Serial.println("Connecting to wifi...");
-	WiFi.mode(WIFI_STA);
-	WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-	while (WiFi.waitForConnectResult() != WL_CONNECTED)
-	{
-		Serial.println("\r\nConnection Failed! Rebooting...");
-		delay(5000);
-		ESP.restart();
-	}
-
-	IPAddress myIP = WiFi.localIP();
-	Serial.print("My IP address: ");
-	Serial.println(myIP);
+	//Connect to wifi
+	bool wifiConnectionResult = ConnectToWifi(0);
+	if (wifiConnectionResult == false)
+		CreateWiFiAPPoint();
 
 	ConfigureWebServer();	
 
@@ -108,7 +100,7 @@ void setup()
 	}
 
 	_timeClient.begin();
-	_timeClient.update();
+	_timeClient.update();	
 	_currentDay = _timeClient.getDay();
 	_lastHourWrittenChart = _timeClient.getHours();
 
@@ -207,6 +199,43 @@ void loop()
 	}
 }
 
+bool ConnectToWifi(int triesCounter)
+{
+	Serial.println("Connecting to wifi...");
+	WiFi.mode(WIFI_STA);
+	WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+	if (triesCounter <= WIFI_CONNECT_MAX_TRIES && WiFi.waitForConnectResult() != WL_CONNECTED)
+	{
+		Serial.println("\r\nConnection Failed! Trying again...");
+		delay(3000);
+		return ConnectToWifi(++triesCounter);
+	}
+	else if (WiFi.waitForConnectResult() != WL_CONNECTED)
+	{
+		Serial.println("Reached WIFI_CONNECT_MAX_TRIES, stopped trying to connect to WIFI.");
+		return false;
+	}
+
+	IPAddress myIP = WiFi.localIP();
+	Serial.print("My IP address: ");
+	Serial.println(myIP);
+	return true;
+}
+
+void CreateWiFiAPPoint()
+{
+	Serial.println("Creating a WIFI AP...");
+	WiFi.mode(WIFI_AP);
+	bool result = WiFi.softAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+	if (result == true)
+	{
+		Serial.print("Started a new WIFI AP with name: ");
+		Serial.println(WIFI_AP_NAME);
+	}		
+	else
+		Serial.println("Failed to start a WIFI AP.");
+}
+
 void FillArraysWithRandomNumbers()
 {
 	for (int counter = 0; counter < DAY_CHART_ARRAY_LENGTH; counter++)
@@ -263,28 +292,4 @@ bool LastReadingAvaliable()
 		return true;
 	else
 		return false;
-}
-
-String GetChartArrayForWeb(float chartValues[])
-{
-	int numOfCorrectValues = 0;
-	float tempValues[DAY_CHART_ARRAY_LENGTH];
-	for (int counter = 0; counter < DAY_CHART_ARRAY_LENGTH; counter++)
-	{
-		if (isnan(chartValues[counter]) == false)
-		{
-			tempValues[numOfCorrectValues] = chartValues[counter];
-			numOfCorrectValues++;
-		}
-	}
-	String output = "[";
-	for (int counter = 0; counter < numOfCorrectValues; counter++)
-	{
-		if (counter + 1 == numOfCorrectValues)
-			output += tempValues[counter];
-		else
-			output += (String)tempValues[counter] + ",";
-	}
-	output += "]";
-	return output;
 }

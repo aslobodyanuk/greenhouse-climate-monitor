@@ -10,7 +10,7 @@ void ConfigureWebServer()
 			_webServer.send(404, "text/plain", "404: Not Found");
 	});
 	_webServer.begin();
-
+	
 	Serial.println("HTTP server started");
 }
 
@@ -86,4 +86,28 @@ void HandleSaveConfig()
 
 	Serial.println("Saved new config.");
 	_webServer.send(200, "text/plain", "OK");
+}
+
+String GetChartArrayForWeb(float chartValues[])
+{
+	int numOfCorrectValues = 0;
+	float tempValues[DAY_CHART_ARRAY_LENGTH];
+	for (int counter = 0; counter < DAY_CHART_ARRAY_LENGTH; counter++)
+	{
+		if (isnan(chartValues[counter]) == false)
+		{
+			tempValues[numOfCorrectValues] = chartValues[counter];
+			numOfCorrectValues++;
+		}
+	}
+	String output = "[";
+	for (int counter = 0; counter < numOfCorrectValues; counter++)
+	{
+		if (counter + 1 == numOfCorrectValues)
+			output += tempValues[counter];
+		else
+			output += (String)tempValues[counter] + ",";
+	}
+	output += "]";
+	return output;
 }

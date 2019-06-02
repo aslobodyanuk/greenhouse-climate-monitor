@@ -1,11 +1,11 @@
 void LoadConfigFromMemory()
 {
 	Serial.println("Loading config from memory.");
-
+	
+	EEPROM.begin(100);
 	if (EEPROM.read(0) != 228)
 		WriteDefaultConfigToMemory();
 
-	EEPROM.begin(100);
 	_configuration.Latitude = EEPROM.read(1);
 	_configuration.Longitude = EEPROM.read(2);
 	_configuration.DesiredTemperature = EEPROM.read(3);
@@ -66,23 +66,3 @@ Configuration GetDefaultConfiguration()
 	output.CloudsSimulationPercent = 20;
 	return output;
 }
-
-//Configuration DeserializeConfig(String inputJson)
-//{
-//	Configuration output;	
-//	DeserializationError error = deserializeJson(_jsonMemory, inputJson);
-//
-//	if (error) {
-//		Serial.print("Deserialization of Configuration failed, returning default value. Error: ");
-//		Serial.println(error.c_str());
-//		return GetDefaultConfiguration();
-//	}
-//
-//	output.Latitude = _jsonMemory["Latitude"];
-//	output.Longitude = _jsonMemory["Longitude"];
-//	output.DesiredLightning = _jsonMemory["DesiredLightning"];
-//	output.DesiredTemperature = _jsonMemory["DesiredTemperature"];
-//	output.CloudsSimulationPercent = _jsonMemory["CloudsSimulationPercent"];
-//
-//	return output;
-//}
