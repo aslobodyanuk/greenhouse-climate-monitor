@@ -205,14 +205,14 @@ void loop()
 	{
 		_timeClient.update();
 
-		Serial.print("Hour: ");
-		Serial.println(_timeClient.getHours());
-
 		Serial.print("Time: ");
+		Serial.print(_timeClient.getFormattedTime());
+
+		Serial.print(" MilisTime: ");
 		Serial.println(_timeClient.getEpochTime());
 
-		Serial.print("LastHour: ");
-		Serial.println(_lastHourWrittenChart);
+		/*Serial.print("LastHour: ");
+		Serial.println(_lastHourWrittenChart);*/
 
 		//Update chart values every hour for a day
 		if (_timeClient.getHours() > _lastHourWrittenChart || (_timeClient.getHours() == 0 && _lastHourWrittenChart == 23))
