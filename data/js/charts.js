@@ -28,7 +28,7 @@ var myChart = new Chart(ctx, {
       borderWidth: 1
     }]
   },
-  options: {
+  options: {    
     scales: {
       yAxes: [{
         ticks: {
@@ -144,7 +144,7 @@ var myLineChart = new Chart(ctxD, {
 
 function fillCharts(chartsData) {
   var ctxL = document.getElementById("temperatureChart").getContext('2d');
-  var myLineChart = new Chart(ctxL, {
+  temperatureChart = new Chart(ctxL, {
     type: 'line',
     data: {
       labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
@@ -162,12 +162,16 @@ function fillCharts(chartsData) {
       ]
     },
     options: {
-      responsive: true
+      responsive: true,
+      legend: false,
+      animation: {
+        duration: 0
+      }
     }
   });
 
   var ctxL = document.getElementById("humidityChart").getContext('2d');
-  var myLineChart = new Chart(ctxL, {
+  humidityChart = new Chart(ctxL, {
     type: 'line',
     data: {
       labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
@@ -185,12 +189,16 @@ function fillCharts(chartsData) {
       ]
     },
     options: {
-      responsive: true
+      responsive: true,
+      legend: false,
+      animation: {
+        duration: 0
+      }
     }
   });
 
   var ctxL = document.getElementById("lightChart").getContext('2d');
-  var myLineChart = new Chart(ctxL, {
+  lightChart = new Chart(ctxL, {
     type: 'line',
     data: {
       labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
@@ -208,7 +216,11 @@ function fillCharts(chartsData) {
       ]
     },
     options: {
-      responsive: true
+      responsive: true,
+      legend: false,
+      animation: {
+        duration: 0
+      }
     }
   });
 }

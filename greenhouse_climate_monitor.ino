@@ -33,6 +33,8 @@
 #define WRITE_TO_CHART_EVERY 3600
 #define DAY_CHART_ARRAY_LENGTH 24
 
+#define DATA_SIMULATION_WRITE_EVERY 1000
+
 #define WIFI_CONNECT_MAX_TRIES 2
 #define WIFI_AP_NAME "Climate Monitor"
 #define WIFI_AP_PASSWORD "12344321"
@@ -53,6 +55,9 @@ unsigned long _lastReadDhtSensor;
 unsigned long _lastReadLightSensor;
 unsigned long _lastReadProximitySensor;
 unsigned long _lastTimeUpdate;
+
+unsigned long _dataSimulationLastWrite;
+int _dataSimulationCurrentHour;
 
 float _lastHumidityValue;
 float _lastTemperatureValue;
@@ -78,6 +83,7 @@ void setup()
 	_lastReadLightSensor = millis();
 	_lastReadProximitySensor = millis();
 	_lastTimeUpdate = millis();
+	_dataSimulationLastWrite = millis();
 
 	_dhtSensor.begin();
 	SPIFFS.begin();
@@ -99,14 +105,19 @@ void setup()
 		Serial.println(F("Error initializing BH1750."));
 	}
 
-	_timeClient.begin();
-	_timeClient.update();	
-	_currentDay = _timeClient.getDay();
-	_lastHourWrittenChart = _timeClient.getHours();
+	_currentDay = 0;
+	_dataSimulationCurrentHour = 0;
+	if (_configuration.SimulateData == false)
+	{
+		_timeClient.begin();
+		_timeClient.update();
+		_currentDay = _timeClient.getDay();
+		_lastHourWrittenChart = _timeClient.getHours();
+	}	
 
 	ClearChartArrays();
 
-	FillArraysWithRandomNumbers();	
+	//FillArraysWithRandomNumbers();	
 }
 
 void loop()
@@ -124,7 +135,7 @@ void loop()
 		if (!isnan(humidityReading))
 			_lastHumidityValue = _humidityFilter.updateEstimate(humidityReading);
 
-		Serial.print("Temp: ");
+		/*Serial.print("Temp: ");
 		Serial.print(temperatureReading);
 		Serial.print(" E: ");
 		Serial.println(_lastTemperatureValue);
@@ -132,7 +143,7 @@ void loop()
 		Serial.print("Humidity: ");
 		Serial.print(humidityReading);
 		Serial.print(" E: ");
-		Serial.println(_lastHumidityValue);
+		Serial.println(_lastHumidityValue);*/
 
 		_lastReadDhtSensor = millis();
 	}
@@ -144,10 +155,10 @@ void loop()
 		if (!isnan(lux))
 			_lastLightValue = _lightFilter.updateEstimate(lux);
 
-		Serial.print("Light: ");
+		/*Serial.print("Light: ");
 		Serial.print(lux);
 		Serial.print(" E: ");
-		Serial.println(_lastLightValue);
+		Serial.println(_lastLightValue);*/
 
 		_lastReadLightSensor = millis();
 	}
@@ -175,7 +186,22 @@ void loop()
 		_lastReadProximitySensor = millis();
 	}*/
 
-	if (millis() - _lastTimeUpdate > UPDATE_TIME_EVERY)
+	if (_configuration.SimulateData && millis() - _dataSimulationLastWrite > DATA_SIMULATION_WRITE_EVERY)
+	{
+		Serial.println("Writing simulation data.");
+		if (_dataSimulationCurrentHour >= DAY_CHART_ARRAY_LENGTH)
+		{
+			_dataSimulationCurrentHour = 0;
+			_currentDay++;
+			ClearChartArrays();
+		}
+
+		UpdateChartData(_currentDay, _dataSimulationCurrentHour);
+		_dataSimulationCurrentHour++;
+				
+		_dataSimulationLastWrite = millis();
+	}
+	else if (_configuration.SimulateData == false && millis() - _lastTimeUpdate > UPDATE_TIME_EVERY)
 	{
 		_timeClient.update();
 
@@ -192,7 +218,7 @@ void loop()
 		if (_timeClient.getHours() > _lastHourWrittenChart || (_timeClient.getHours() == 0 && _lastHourWrittenChart == 23))
 		{
 			_lastHourWrittenChart = _timeClient.getDay();
-			UpdateChartData();
+			UpdateChartData(_timeClient.getDay(), _timeClient.getHours());
 		}
 
 		_lastTimeUpdate = millis();
@@ -246,26 +272,27 @@ void FillArraysWithRandomNumbers()
 	}
 }
 
-void UpdateChartData()
+void UpdateChartData(int currentDayReading, int currentHourReading)
 {
 	Serial.println("Updating chart data.");
 	//If last reading was faulty - reset state, to ensure that data will be written one more time
 	if (LastReadingAvaliable() == false)
 	{
-		_lastHourWrittenChart = _timeClient.getDay() - 1;
+		_lastHourWrittenChart = currentDayReading - 1;
 		return;
 	}
 
-	if (_timeClient.getDay() != _currentDay)
+	if (currentDayReading != _currentDay)
 	{
 		ClearChartArrays();
-		_currentDay = _timeClient.getDay();
+		_currentDay = currentDayReading;
 	}
-	FillNewValuesInChart();
+	FillNewValuesInChart(currentHourReading);
 }
 
 void ClearChartArrays()
 {
+	Serial.println("Clearing chart arrays.");
 	for (int counter = 0; counter < DAY_CHART_ARRAY_LENGTH; counter++)
 	{
 		_temperatureDay[counter] = NAN;
@@ -274,13 +301,13 @@ void ClearChartArrays()
 	}
 }
 
-void FillNewValuesInChart()
+void FillNewValuesInChart(int currentHourReading)
 {
 	if (LastReadingAvaliable())
 	{
-		_temperatureDay[_timeClient.getHours()] = _lastTemperatureValue;
-		_humidityDay[_timeClient.getHours()] = _lastHumidityValue;
-		_lightDay[_timeClient.getHours()] = _lastLightValue;
+		_temperatureDay[currentHourReading] = _lastTemperatureValue;
+		_humidityDay[currentHourReading] = _lastHumidityValue;
+		_lightDay[currentHourReading] = _lastLightValue;
 	}
 }
 

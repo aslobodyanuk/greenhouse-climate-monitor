@@ -1,3 +1,7 @@
+var temperatureChart;
+var humidityChart;
+var lightChart;
+
 function fillLatestData(latestData) {
   $("#latestTempValueCell").text(latestData.Temperature);
   $("#latestHumidityValueCell").text(latestData.Humidity);
@@ -118,8 +122,31 @@ function fadeInItem(element) {
   element.addClass('animatedVisible').removeClass('animatedHidden');
 }
 
+function updateDataFromESP() {
+  $.ajax({
+    type: "GET",
+    url: "/getChartData",
+    success: function (data) {
+      console.log(data);
+      updateChartData(temperatureChart, data.TemperatureDayArray);
+      updateChartData(humidityChart, data.HumidityDayArray);
+      updateChartData(lightChart, data.LightDayArray);
+    }
+  });
+
+  getLatestData();
+}
+
+function updateChartData(chart, data) {
+  chart.data.datasets.forEach((dataset) => {
+    dataset.data = data;
+  });
+  chart.update();
+}
+
 $(document).ready(function () {
   console.log("Loading charts...");
   getChartData();
   getLatestData();
+  setInterval(updateDataFromESP, 10000);
 });
