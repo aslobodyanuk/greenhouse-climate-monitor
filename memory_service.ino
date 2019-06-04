@@ -26,6 +26,8 @@ void WriteConfigToMemory()
 	curAddress += sizeof(int);
 	EEPROM.put(curAddress, _configuration);
 	EEPROM.end();
+
+	_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
 }
 
 void WriteDefaultConfigToMemory()
@@ -38,6 +40,8 @@ void WriteDefaultConfigToMemory()
 	curAddress += sizeof(int);
 	EEPROM.put(curAddress, defaultConfig);
 	EEPROM.end();
+
+	_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
 }
 
 void DisplayEEPROM()

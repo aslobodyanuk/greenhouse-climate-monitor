@@ -112,6 +112,7 @@ typedef long __PTRDIFF_TYPE__;
 
 #include "greenhouse_climate_monitor.ino"
 #include "memory_service.ino"
+#include "sun_calculations.ino"
 #include "web_server.ino"
 #endif
 #endif

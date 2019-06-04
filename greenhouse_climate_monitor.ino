@@ -18,7 +18,7 @@
 
 #define LIGHT_METER_SDA_PIN D3
 #define LIGHT_METER_SCL_PIN D5
-#define READ_LIGHT_METER_EVERY 400
+#define READ_LIGHT_METER_EVERY 100
 #define LIGHT_METER_ADDRESS 0x23
 
 #define PROXIMITY_SENSOR_ECHO_PIN D7
@@ -46,9 +46,13 @@ const char *WIFI_PASSWORD = "9hAiW%oR08521";
 
 #define LIGHT_PID_OUTPUT_MIN 0
 #define LIGHT_PID_OUTPUT_MAX 255
-#define LIGHT_PID_KP 0.3
-#define LIGHT_PID_KI 0.1
-#define LIGHT_PID_KD 0.9
+#define LIGHT_PID_KP 0.032
+#define LIGHT_PID_KI 3.2
+#define LIGHT_PID_KD 0.0016
+
+double _light_pid_KP = 0;
+double _light_pid_KI = 0;
+double _light_pid_KD = 0;
 
 #define LIGHT_OUTPUT_PIN D2
 
@@ -63,6 +67,7 @@ NTPClient _timeClient(_ntpUDP, TIME_HOST_NAME, UTC_OFFSET_SECONDS);
 
 unsigned long _totalSunTime = 0;
 unsigned long _millisCurrentDayStart;
+double _currentDayLengthCalculated;
 
 unsigned long _lastReadDhtSensor;
 unsigned long _lastReadLightSensor;
@@ -86,10 +91,10 @@ Configuration _configuration;
 
 double _lastLightValuePID;
 double _lightPIDOutput;
-AutoPID _lightPID(&_lastLightValuePID, &_configuration.DesiredLightning, &_lightPIDOutput, LIGHT_PID_OUTPUT_MIN, LIGHT_PID_OUTPUT_MAX, LIGHT_PID_KP, LIGHT_PID_KI, LIGHT_PID_KD);
+AutoPID _lightPID(&_lastLightValuePID, &_configuration.DesiredLightning, &_lightPIDOutput, LIGHT_PID_OUTPUT_MIN, LIGHT_PID_OUTPUT_MAX, _light_pid_KP, _light_pid_KI, _light_pid_KD);
 
 void setup()
-{		
+{
 	Wire.begin(LIGHT_METER_SDA_PIN, LIGHT_METER_SCL_PIN);
 	pinMode(PROXIMITY_SENSOR_TRIG_PIN, OUTPUT);
 	pinMode(PROXIMITY_SENSOR_ECHO_PIN, INPUT);
@@ -116,7 +121,7 @@ void setup()
 	if (wifiConnectionResult == false)
 		CreateWiFiAPPoint();
 
-	ConfigureWebServer();	
+	ConfigureWebServer();
 
 	if (_lightMeter.begin(BH1750::ONE_TIME_HIGH_RES_MODE)) {
 		Serial.println(F("BH1750 initialized."));
@@ -133,7 +138,8 @@ void setup()
 		_timeClient.update();
 		_currentDay = _timeClient.getDay();
 		_lastHourWrittenChart = _timeClient.getHours();
-	}	
+		_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
+	}
 
 	ClearChartArrays();
 
@@ -142,14 +148,14 @@ void setup()
 }
 
 void loop()
-{
+{	
 	_lightPID.run();
 	analogWrite(LIGHT_OUTPUT_PIN, _lightPIDOutput);
 
 	_webServer.handleClient();
 
 	if (millis() - _lastReadDhtSensor > READ_DHT_EVERY)
-	{		
+	{
 		float temperatureReading = _dhtSensor.readTemperature();
 		float humidityReading = _dhtSensor.readHumidity();
 
@@ -191,12 +197,12 @@ void loop()
 		if (_lastLightValue >= _configuration.DesiredLightning * 0.9)
 			_totalSunTime += millis() - _lastReadLightSensor;
 
-		Serial.print("Light: ");
+		/*Serial.print("Light: ");
 		Serial.print(_lastLightValuePID);
 		Serial.print(" PID Output: ");
 		Serial.print(_lightPIDOutput);
 		Serial.print(" Est: ");
-		Serial.println(_lastLightValue);
+		Serial.println(_lastLightValue);*/
 
 		_lastReadLightSensor = millis();
 	}
@@ -236,7 +242,7 @@ void loop()
 
 		UpdateChartData(_currentDay, _dataSimulationCurrentHour);
 		_dataSimulationCurrentHour++;
-				
+
 		_dataSimulationLastWrite = millis();
 	}
 	else if (_configuration.SimulateData == false && millis() - _lastTimeUpdate > UPDATE_TIME_EVERY)
@@ -260,6 +266,34 @@ void loop()
 		}
 
 		_lastTimeUpdate = millis();
+	}
+
+	ProcessSerial();
+}
+
+void ProcessSerial()
+{
+	if (Serial.available() > 0) {		
+		String first = Serial.readStringUntil('|');
+		first.replace('|', ' ');
+		_light_pid_KP = first.toFloat();
+
+		String second = Serial.readStringUntil('|');
+		second.replace('|', ' ');
+		_light_pid_KI = second.toFloat();
+
+		String third = Serial.readStringUntil('|');
+		third.replace('|', ' ');
+		_light_pid_KD = third.toFloat();
+
+		Serial.print("Recieved values: ");
+		Serial.print(_light_pid_KP, 10);
+		Serial.print(" ");
+		Serial.print(_light_pid_KI, 10);
+		Serial.print(" ");
+		Serial.println(_light_pid_KD, 10);
+
+		_lightPID.setGains(_light_pid_KP, _light_pid_KI, _light_pid_KD);
 	}
 }
 
@@ -295,7 +329,7 @@ void CreateWiFiAPPoint()
 	{
 		Serial.print("Started a new WIFI AP with name: ");
 		Serial.println(WIFI_AP_NAME);
-	}		
+	}
 	else
 		Serial.println("Failed to start a WIFI AP.");
 }

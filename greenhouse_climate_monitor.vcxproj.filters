@@ -18,6 +18,7 @@
     <None Include="greenhouse_climate_monitor.ino" />
     <None Include="web_server.ino" />
     <None Include="memory_service.ino" />
+    <None Include="sun_calculations.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.greenhouse_climate_monitor.vsarduino.h">

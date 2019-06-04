@@ -81,6 +81,9 @@
     <None Include="memory_service.ino">
       <FileType>CppCode</FileType>
     </None>
+    <None Include="sun_calculations.ino">
+      <FileType>CppCode</FileType>
+    </None>
     <None Include="web_server.ino">
       <FileType>CppCode</FileType>
     </None>
