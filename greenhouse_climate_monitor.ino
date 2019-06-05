@@ -44,15 +44,12 @@
 const char *WIFI_SSID = "DNIWE";
 const char *WIFI_PASSWORD = "9hAiW%oR08521";
 
+#define LIGHT_PID_TIME_STEP 100
 #define LIGHT_PID_OUTPUT_MIN 0
 #define LIGHT_PID_OUTPUT_MAX 255
-#define LIGHT_PID_KP 0.032
-#define LIGHT_PID_KI 3.2
-#define LIGHT_PID_KD 0.0016
-
-double _light_pid_KP = 0;
-double _light_pid_KI = 0;
-double _light_pid_KD = 0;
+#define LIGHT_PID_KP 0.066
+#define LIGHT_PID_KI 0.1196
+#define LIGHT_PID_KD 0.0091
 
 #define LIGHT_OUTPUT_PIN D2
 
@@ -65,9 +62,11 @@ SimpleKalmanFilter _lightFilter(2, 2, 0.01);
 WiFiUDP _ntpUDP;
 NTPClient _timeClient(_ntpUDP, TIME_HOST_NAME, UTC_OFFSET_SECONDS);
 
+//Total sun time in millis
 unsigned long _totalSunTime = 0;
 unsigned long _millisCurrentDayStart;
 double _currentDayLengthCalculated;
+bool _enableAtrificialLightning = true;
 
 unsigned long _lastReadDhtSensor;
 unsigned long _lastReadLightSensor;
@@ -91,18 +90,20 @@ Configuration _configuration;
 
 double _lastLightValuePID;
 double _lightPIDOutput;
-AutoPID _lightPID(&_lastLightValuePID, &_configuration.DesiredLightning, &_lightPIDOutput, LIGHT_PID_OUTPUT_MIN, LIGHT_PID_OUTPUT_MAX, _light_pid_KP, _light_pid_KI, _light_pid_KD);
+AutoPID _lightPID(&_lastLightValuePID, &_configuration.DesiredLightning, &_lightPIDOutput, LIGHT_PID_OUTPUT_MIN, LIGHT_PID_OUTPUT_MAX, LIGHT_PID_KP, LIGHT_PID_KI, LIGHT_PID_KD);
 
 void setup()
 {
+	//Initialize pins
 	Wire.begin(LIGHT_METER_SDA_PIN, LIGHT_METER_SCL_PIN);
 	pinMode(PROXIMITY_SENSOR_TRIG_PIN, OUTPUT);
 	pinMode(PROXIMITY_SENSOR_ECHO_PIN, INPUT);
-
 	pinMode(LIGHT_OUTPUT_PIN, OUTPUT);
 
+	//Initialize serial communication
 	Serial.begin(9600);
 
+	//Initialize time counters
 	_lastReadDhtSensor = millis();
 	_lastReadLightSensor = millis();
 	_lastReadProximitySensor = millis();
@@ -110,19 +111,8 @@ void setup()
 	_dataSimulationLastWrite = millis();
 	_millisCurrentDayStart = millis();
 
+	//Initialize sensors
 	_dhtSensor.begin();
-	SPIFFS.begin();
-
-	//DisplayEEPROM();
-	LoadConfigFromMemory();
-
-	//Connect to wifi
-	bool wifiConnectionResult = ConnectToWifi(0);
-	if (wifiConnectionResult == false)
-		CreateWiFiAPPoint();
-
-	ConfigureWebServer();
-
 	if (_lightMeter.begin(BH1750::ONE_TIME_HIGH_RES_MODE)) {
 		Serial.println(F("BH1750 initialized."));
 	}
@@ -130,27 +120,54 @@ void setup()
 		Serial.println(F("Error initializing BH1750."));
 	}
 
-	_currentDay = 0;
-	_dataSimulationCurrentHour = 0;
-	if (_configuration.SimulateData == false)
-	{
-		_timeClient.begin();
-		_timeClient.update();
-		_currentDay = _timeClient.getDay();
-		_lastHourWrittenChart = _timeClient.getHours();
-		_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
-	}
+	//Initialize internal memory
+	SPIFFS.begin();
 
+	//Load configuration from EEPROM
+	LoadConfigFromMemory();
+
+	//Connect to wifi
+	bool wifiConnectionResult = ConnectToWifi(0);
+	if (wifiConnectionResult == false)
+		CreateWiFiAPPoint();
+
+	//Start web server
+	ConfigureWebServer();
+
+	//Initialize time client and all related variables
+	_timeClient.begin();
+	_timeClient.update();
+	_currentDay = _timeClient.getDay();
+	_lastHourWrittenChart = _timeClient.getHours();
+	_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
+	
+	//Reset variables if SimulatedData mode enabled
+	if (_configuration.SimulateData)
+	{
+		_currentDay = 0;
+		_dataSimulationCurrentHour = 0;				
+	}
+	
+	//Clear chart arrays with NAN values to ensure no bad data gets to charts
 	ClearChartArrays();
 
-	//FillArraysWithRandomNumbers();	
-	_lightPID.setTimeStep(100);
+	//Configure time step for PID library
+	_lightPID.setTimeStep(LIGHT_PID_TIME_STEP);
 }
 
 void loop()
 {	
 	_lightPID.run();
-	analogWrite(LIGHT_OUTPUT_PIN, _lightPIDOutput);
+
+	if (_enableAtrificialLightning)
+		analogWrite(LIGHT_OUTPUT_PIN, _lightPIDOutput);
+
+	/*Serial.print("Light: ");
+	Serial.print(_lastLightValuePID);
+	Serial.print(" PID: ");
+	Serial.print(_lightPIDOutput);
+	Serial.print(" Millis: ");
+	Serial.println(millis());*/
 
 	_webServer.handleClient();
 
@@ -192,11 +209,19 @@ void loop()
 		{
 			_totalSunTime = 0;
 			_millisCurrentDayStart = millis();
+			Serial.println("Current millis day has passed away. Resetting millis day counter and total sun time.");
 		}
 
 		if (_lastLightValue >= _configuration.DesiredLightning * 0.9)
-			_totalSunTime += millis() - _lastReadLightSensor;
+			_totalSunTime += millis() - _lastReadLightSensor;		
 
+		if (_totalSunTime / 1000 >= _currentDayLengthCalculated)
+		{
+			_enableAtrificialLightning = false;
+			analogWrite(LIGHT_OUTPUT_PIN, 0);
+			Serial.println("Reached 'currentDayLengthCalculated', disabling artificial lightning.");
+		}
+			
 		/*Serial.print("Light: ");
 		Serial.print(_lastLightValuePID);
 		Serial.print(" PID Output: ");
@@ -247,7 +272,7 @@ void loop()
 	}
 	else if (_configuration.SimulateData == false && millis() - _lastTimeUpdate > UPDATE_TIME_EVERY)
 	{
-		_timeClient.update();
+		_timeClient.update();		
 
 		/*Serial.print("Time: ");
 		Serial.print(_timeClient.getFormattedTime());
@@ -266,34 +291,6 @@ void loop()
 		}
 
 		_lastTimeUpdate = millis();
-	}
-
-	ProcessSerial();
-}
-
-void ProcessSerial()
-{
-	if (Serial.available() > 0) {		
-		String first = Serial.readStringUntil('|');
-		first.replace('|', ' ');
-		_light_pid_KP = first.toFloat();
-
-		String second = Serial.readStringUntil('|');
-		second.replace('|', ' ');
-		_light_pid_KI = second.toFloat();
-
-		String third = Serial.readStringUntil('|');
-		third.replace('|', ' ');
-		_light_pid_KD = third.toFloat();
-
-		Serial.print("Recieved values: ");
-		Serial.print(_light_pid_KP, 10);
-		Serial.print(" ");
-		Serial.print(_light_pid_KI, 10);
-		Serial.print(" ");
-		Serial.println(_light_pid_KD, 10);
-
-		_lightPID.setGains(_light_pid_KP, _light_pid_KI, _light_pid_KD);
 	}
 }
 
