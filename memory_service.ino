@@ -28,6 +28,7 @@ void WriteConfigToMemory()
 	EEPROM.end();
 
 	_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
+	CalculateAndSetDesiredLightning();
 }
 
 void WriteDefaultConfigToMemory()
@@ -39,9 +40,7 @@ void WriteDefaultConfigToMemory()
 	EEPROM.write(0, 228);
 	curAddress += sizeof(int);
 	EEPROM.put(curAddress, defaultConfig);
-	EEPROM.end();
-
-	_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
+	EEPROM.end();	
 }
 
 void DisplayEEPROM()
@@ -64,4 +63,14 @@ Configuration GetDefaultConfiguration()
 	output.CloudsSimulationPercent = 20;
 	output.SimulateData = false;
 	return output;
+}
+
+void CalculateAndSetDesiredLightning()
+{
+	if (_configuration.CloudsSimulationPercent == 0)
+		_desiredLightning = _configuration.DesiredLightning;
+	else
+		_desiredLightning = _configuration.DesiredLightning - (_configuration.DesiredLightning * _configuration.CloudsSimulationPercent / 100);
+	Serial.print("Calculated new desired lightning: ");
+	Serial.println(_desiredLightning);
 }

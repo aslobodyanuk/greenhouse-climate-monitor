@@ -66,7 +66,7 @@ void HandleGetChartsData()
 
 void HandleGetLatestReadings()
 {
-	String outputJson = "{ \"Temperature\": " + (String)_lastTemperatureValue + ", \"Humidity\": " + (String)_lastHumidityValue + ", \"Light\": " + (String)_lastLightValue + ", \"Time\": \"" + _timeClient.getFormattedTime() + "\", \"UptimeSeconds\": " + millis() / 1000 + ", \"TotalSunTime\": " + _totalSunTime / 1000 + " }";
+	String outputJson = "{ \"Temperature\": " + (String)_lastTemperatureValue + ", \"Humidity\": " + (String)_lastHumidityValue + ", \"Light\": " + (String)_lastLightValue + ", \"Time\": \"" + _timeClient.getFormattedTime() + "\", \"UptimeSeconds\": " + millis() / 1000 + ", \"TotalSunTime\": " + _totalSunTime / 1000 + ", \"CurrentDayLength\": " + _currentDayLengthCalculated + " }";
 	Serial.println("Sending latest values json: " + outputJson);
 	_webServer.send(200, "application/json", outputJson);
 }

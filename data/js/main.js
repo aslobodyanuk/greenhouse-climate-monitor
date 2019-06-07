@@ -9,6 +9,7 @@ function fillLatestData(latestData) {
   $("#currentTimeLatestReading").text(latestData.Time);
   $("#uptimeValueCell").text(latestData.UptimeSeconds);
   $("#totalSunTimeCell").text(latestData.TotalSunTime);
+  $("#currentDayLengthCell").text(latestData.CurrentDayLength);
 }
 
 function getChartData() {

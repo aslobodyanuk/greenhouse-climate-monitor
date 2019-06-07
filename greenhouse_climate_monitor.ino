@@ -65,6 +65,8 @@ NTPClient _timeClient(_ntpUDP, TIME_HOST_NAME, UTC_OFFSET_SECONDS);
 //Total sun time in millis
 unsigned long _totalSunTime = 0;
 unsigned long _millisCurrentDayStart;
+
+//Calculated current day length based on coordinates and Epoch time from NTP
 double _currentDayLengthCalculated;
 bool _enableAtrificialLightning = true;
 
@@ -88,9 +90,10 @@ float _lightDay[DAY_CHART_ARRAY_LENGTH];
 
 Configuration _configuration;
 
+double _desiredLightning;
 double _lastLightValuePID;
 double _lightPIDOutput;
-AutoPID _lightPID(&_lastLightValuePID, &_configuration.DesiredLightning, &_lightPIDOutput, LIGHT_PID_OUTPUT_MIN, LIGHT_PID_OUTPUT_MAX, LIGHT_PID_KP, LIGHT_PID_KI, LIGHT_PID_KD);
+AutoPID _lightPID(&_lastLightValuePID, &_desiredLightning, &_lightPIDOutput, LIGHT_PID_OUTPUT_MIN, LIGHT_PID_OUTPUT_MAX, LIGHT_PID_KP, LIGHT_PID_KI, LIGHT_PID_KD);
 
 void setup()
 {
@@ -140,6 +143,9 @@ void setup()
 	_currentDay = _timeClient.getDay();
 	_lastHourWrittenChart = _timeClient.getHours();
 	_currentDayLengthCalculated = getCurrentDayLength(_timeClient.getEpochTime(), _configuration.Latitude, _configuration.Longitude);
+
+	//Calculate new desired lightning based on cloudness
+	CalculateAndSetDesiredLightning();
 	
 	//Reset variables if SimulatedData mode enabled
 	if (_configuration.SimulateData)
@@ -212,7 +218,7 @@ void loop()
 			Serial.println("Current millis day has passed away. Resetting millis day counter and total sun time.");
 		}
 
-		if (_lastLightValue >= _configuration.DesiredLightning * 0.9)
+		if (_lastLightValue >= _desiredLightning * 0.9)
 			_totalSunTime += millis() - _lastReadLightSensor;		
 
 		if (_totalSunTime / 1000 >= _currentDayLengthCalculated)
